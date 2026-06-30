@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Client
@@ -18,7 +19,8 @@ class ClientRepository:
         return client
 
     def get_all(self) -> list[Client]:
-        return self.session.query(Client).all()
+        stmt = select(Client)
+        return list(self.session.scalars(stmt))
 
     def get_by_id(self, client_id: UUID) -> Client | None:
         return self.session.get(Client, client_id)

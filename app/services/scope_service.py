@@ -17,6 +17,12 @@ class ScopeService:
             raise HTTPException(status_code=404, detail="Scope not found")
         return scope
 
+    def get_by_codes(self, codes: list[str]) -> list[Scope]:
+        scopes = self.scope_repo.get_by_codes(codes)
+        if len(scopes) != len(codes):
+            raise HTTPException(status_code=404, detail="One or more scopes not found")
+        return scopes
+
     def get_all(self) -> list[Scope]:
         return self.scope_repo.get_all()
 
