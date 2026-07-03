@@ -28,3 +28,14 @@ class APIKeyResponse(BaseModel):
 
 class APIKeyCreateResponse(APIKeyResponse):
     raw_key: str
+
+
+class APIKeyVerifyResponse(BaseModel):
+    client_id: UUID
+    scopes: list[str]
+
+
+class APIKeyRevokeResponse(BaseModel):
+    id: UUID
+    status: APIKeyStatus
+    revoked_at: datetime
