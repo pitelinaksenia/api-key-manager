@@ -1,46 +1,49 @@
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.api_key import APIKey
 
 
 class APIKeyRepository:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
-    def create(self, api_key: APIKey) -> APIKey:
+    async def create(self, api_key: APIKey) -> APIKey:
         self.session.add(api_key)
-        self.session.commit()
-        self.session.refresh(api_key)
+        await self.session.commit()
+        await self.session.refresh(api_key)
         return api_key
 
-    def get_by_id(self, key_id: UUID) -> APIKey | None:
+    async def get_by_id(self, key_id: UUID) -> APIKey | None:
         stmt = (
             select(APIKey)
             .where(APIKey.id == key_id)
             .options(selectinload(APIKey.scopes))
         )
-        return self.session.scalars(stmt).first()
+        result = await self.session.scalars(stmt)
+        return result.first()
 
-    def get_by_hash(self, key_hash: str) -> APIKey | None:
+    async def get_by_hash(self, key_hash: str) -> APIKey | None:
         stmt = (
             select(APIKey)
             .where(APIKey.key_hash == key_hash)
             .options(selectinload(APIKey.scopes))
         )
-        return self.session.scalars(stmt).first()
+        result = await self.session.scalars(stmt)
+        return result.first()
 
-    def list_by_client(self, client_id: UUID) -> list[APIKey]:
+    async def list_by_client(self, client_id: UUID) -> list[APIKey]:
         stmt = (
             select(APIKey)
             .where(APIKey.client_id == client_id)
             .options(selectinload(APIKey.scopes))
         )
-        return list(self.session.scalars(stmt))
+        return list(await self.session.scalars(stmt))
 
-    def update(self, api_key: APIKey) -> APIKey:
-        self.session.commit()
-        self.session.refresh(api_key)
+    async def update(self, api_key: APIKey) -> APIKey:
+        await self.session.commit()
+        await self.session.refresh(api_key)
         return api_key

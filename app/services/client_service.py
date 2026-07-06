@@ -11,18 +11,18 @@ class ClientService:
     def __init__(self, client_repo: ClientRepository):
         self.client_repo = client_repo
 
-    def register(self, client_data: ClientCreate) -> Client:
-        return self.client_repo.create(client_data)
+    async def register(self, client_data: ClientCreate) -> Client:
+        return await self.client_repo.create(client_data)
 
-    def get(self, client_id: UUID) -> Client:
-        client = self.client_repo.get_by_id(client_id)
+    async def get(self, client_id: UUID) -> Client:
+        client = await self.client_repo.get_by_id(client_id)
         if not client:
             raise HTTPException(status_code=404, detail="Client not found")
         return client
 
-    def get_all(self) -> list[Client]:
-        return self.client_repo.get_all()
+    async def get_all(self) -> list[Client]:
+        return await self.client_repo.get_all()
 
-    def update(self, client_id: UUID, client_data: ClientUpdate) -> Client:
-        client = self.get(client_id)
-        return self.client_repo.update(client, client_data)
+    async def update(self, client_id: UUID, client_data: ClientUpdate) -> Client:
+        client = await self.get(client_id)
+        return await self.client_repo.update(client, client_data)

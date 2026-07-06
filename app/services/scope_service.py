@@ -11,20 +11,20 @@ class ScopeService:
     def __init__(self, scope_repo: ScopeRepository):
         self.scope_repo = scope_repo
 
-    def get(self, scope_id: UUID) -> Scope:
-        scope = self.scope_repo.get()
+    async def get(self, scope_id: UUID) -> Scope:
+        scope = await self.scope_repo.get_by_id(scope_id)
         if not scope:
             raise HTTPException(status_code=404, detail="Scope not found")
         return scope
 
-    def get_by_codes(self, codes: list[str]) -> list[Scope]:
-        scopes = self.scope_repo.get_by_codes(codes)
+    async def get_by_codes(self, codes: list[str]) -> list[Scope]:
+        scopes = await self.scope_repo.get_by_codes(codes)
         if len(scopes) != len(codes):
             raise HTTPException(status_code=404, detail="One or more scopes not found")
         return scopes
 
-    def get_all(self) -> list[Scope]:
-        return self.scope_repo.get_all()
+    async def get_all(self) -> list[Scope]:
+        return await self.scope_repo.get_all()
 
-    def create(self, scope_data: ScopeCreate) -> Scope:
-        return self.scope_repo.create()
+    async def create(self, scope_data: ScopeCreate) -> Scope:
+        return await self.scope_repo.create(scope_data)

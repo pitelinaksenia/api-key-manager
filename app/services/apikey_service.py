@@ -28,14 +28,14 @@ class APIKeyService:
         self.scope_service = scope_service
         self.client_service = client_service
 
-    def create_api_key(
+    async def create_api_key(
         self, client_id: UUID, apikey_data: APIKeyCreate
     ) -> APIKeyCreateResponse:
-        client = self.client_service.get(client_id)
+        client = await self.client_service.get(client_id)
         if not client.is_active:
             raise HTTPException(status_code=400, detail="Client is not active")
 
-        scopes = self.scope_service.get_by_codes(apikey_data.scope_codes)
+        scopes = await self.scope_service.get_by_codes(apikey_data.scope_codes)
 
         raw_k, prefix, k_hash = generate_api_key()
         api_key = APIKey(
@@ -47,7 +47,7 @@ class APIKeyService:
             expires_at=apikey_data.expires_at,
         )
 
-        result = self.apikey_repo.create(api_key)
+        result = await self.apikey_repo.create(api_key)
 
         return APIKeyCreateResponse(
             id=result.id,
@@ -61,19 +61,25 @@ class APIKeyService:
             raw_key=raw_k,
         )
 
-    def get(self, key_id: UUID) -> APIKey:
-        api_key = self.apikey_repo.get_by_id(key_id)
+    async def get(self, key_id: UUID) -> APIKey:
+        api_key = await self.apikey_repo.get_by_id(key_id)
         if not api_key:
-            raise HTTPException(status_code=404, detail="APIKey not found")
+            raise HTTPException(status_code=404, detail="API key not found")
         return api_key
 
-    def list_by_client(self, client_id: UUID) -> list[APIKey]:
-        self.client_service.get(client_id)  # raises 404 if client not found
-        return self.apikey_repo.list_by_client(client_id)
+    async def get_by_client(self, client_id: UUID, key_id: UUID) -> APIKey:
+        api_key = await self.get(key_id)
+        if api_key.client_id != client_id:
+            raise HTTPException(status_code=404, detail="API key not found")
+        return api_key
 
-    def verify_api_key(self, raw_key: str) -> APIKeyVerifyResponse:
+    async def list_by_client(self, client_id: UUID) -> list[APIKey]:
+        await self.client_service.get(client_id)  # raises 404 if client not found
+        return await self.apikey_repo.list_by_client(client_id)
+
+    async def verify_api_key(self, raw_key: str) -> APIKeyVerifyResponse:
         api_key_hash = hash_key(raw_key)
-        api_key = self.apikey_repo.get_by_hash(api_key_hash)
+        api_key = await self.apikey_repo.get_by_hash(api_key_hash)
 
         if not api_key:
             raise HTTPException(status_code=404, detail="API key not found")
@@ -85,22 +91,22 @@ class APIKeyService:
             raise HTTPException(status_code=401, detail="API key expired")
 
         api_key.last_used_at = datetime.now(timezone.utc)
-        self.apikey_repo.update(api_key)
+        await self.apikey_repo.update(api_key)
 
         return APIKeyVerifyResponse(
             client_id=api_key.client_id,
             scopes=[s.code for s in api_key.scopes],
         )
 
-    def revoke_api_key(self, key_id: UUID) -> APIKeyRevokeResponse:
-        api_key = self.get(key_id)
+    async def revoke_api_key(self, key_id: UUID) -> APIKeyRevokeResponse:
+        api_key = await self.get(key_id)
 
         if api_key.status == APIKeyStatus.REVOKED:
             raise HTTPException(status_code=400, detail="APIKey was already revoked")
 
         api_key.status = APIKeyStatus.REVOKED
         api_key.revoked_at = datetime.now(timezone.utc)
-        self.apikey_repo.update(api_key)
+        await self.apikey_repo.update(api_key)
         return APIKeyRevokeResponse(
             id=api_key.id,
             status=api_key.status,
