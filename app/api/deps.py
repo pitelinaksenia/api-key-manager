@@ -1,5 +1,5 @@
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.repositories.apikey_repository import APIKeyRepository
@@ -10,7 +10,9 @@ from app.services.client_service import ClientService
 from app.services.scope_service import ScopeService
 
 
-def get_client_repository(session: Session = Depends(get_db)) -> ClientRepository:
+def get_client_repository(
+    session: AsyncSession = Depends(get_db),
+) -> ClientRepository:
     return ClientRepository(session)
 
 
@@ -20,17 +22,9 @@ def get_client_service(
     return ClientService(client_repo)
 
 
-def get_apikey_repository(session: Session = Depends(get_db)) -> APIKeyRepository:
-    return APIKeyRepository(session)
-
-
-def get_apikey_service(
-    apikey_repo: APIKeyRepository = Depends(get_apikey_repository),
-) -> APIKeyService:
-    return APIKeyService(apikey_repo)
-
-
-def get_scope_repository(session: Session = Depends(get_db)) -> ScopeRepository:
+def get_scope_repository(
+    session: AsyncSession = Depends(get_db),
+) -> ScopeRepository:
     return ScopeRepository(session)
 
 
@@ -38,3 +32,17 @@ def get_scope_service(
     scope_repo: ScopeRepository = Depends(get_scope_repository),
 ) -> APIKeyService:
     return ScopeService(scope_repo)
+
+
+def get_apikey_repository(
+    session: AsyncSession = Depends(get_db),
+) -> APIKeyRepository:
+    return APIKeyRepository(session)
+
+
+def get_apikey_service(
+    apikey_repo: APIKeyRepository = Depends(get_apikey_repository),
+    scope_service: ScopeService = Depends(get_scope_service),
+    client_service: ClientService = Depends(get_client_service),
+) -> APIKeyService:
+    return APIKeyService(apikey_repo, scope_service, client_service)
