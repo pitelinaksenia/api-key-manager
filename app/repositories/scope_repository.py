@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.scope import Scope
 from app.schemas.scope import ScopeCreate
@@ -12,10 +13,15 @@ class ScopeRepository:
         self.session = session
 
     async def get_by_id(self, scope_id: UUID) -> Scope | None:
-        return await self.session.get(Scope, scope_id)
+        stmt = (
+            select(Scope)
+            .options(selectinload(Scope.api_keys))
+            .where(Scope.id == scope_id)
+        )
+        return await self.session.scalar(stmt)
 
     async def get_all(self) -> list[Scope]:
-        stmt = select(Scope)
+        stmt = select(Scope).options(selectinload(Scope.api_keys))
         return list(await self.session.scalars(stmt))
 
     async def get_by_codes(self, codes: list[str]) -> list[Scope]:
@@ -23,8 +29,8 @@ class ScopeRepository:
         return list(await self.session.scalars(stmt))
 
     async def create(self, scope_data: ScopeCreate) -> Scope:
-        scope = Scope(code=scope_data.code, description=scope_data.description)
+        scope = Scope(**scope_data.model_dump())
         self.session.add(scope)
         await self.session.commit()
-        await self.session.refresh(scope)
+        await self.session.refresh(scope, attribute_names=["api_keys"])
         return scope

@@ -4,7 +4,7 @@ import secrets
 
 def generate_api_key() -> tuple[str, str, str]:
 
-    raw_key = f"sk_live{secrets.token_urlsafe(32)}"
+    raw_key = f"sk_live_{secrets.token_urlsafe(32)}"
     prefix = raw_key[:16]
     key_hash = hash_key(raw_key)
 

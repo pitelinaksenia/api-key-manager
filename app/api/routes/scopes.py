@@ -17,18 +17,18 @@ async def create_scope(
     scope_data: ScopeCreate,
     scope_service: ScopeService = Depends(get_scope_service),
 ) -> ScopeResponse:
-    return scope_service.create(scope_data)
+    return await scope_service.create(scope_data)
 
 
 @router.get("/", response_model=list[ScopeResponse])
 async def get_scopes(
     scope_service: ScopeService = Depends(get_scope_service),
 ) -> list[ScopeResponse]:
-    return scope_service.get_all()
+    return await scope_service.get_all()
 
 
 @router.get("/{scope_id}", response_model=ScopeResponse)
 async def get_scope_by_id(
     scope_id: UUID, scope_service: ScopeService = Depends(get_scope_service)
 ) -> ScopeResponse:
-    return scope_service.get(scope_id)
+    return await scope_service.get(scope_id)
