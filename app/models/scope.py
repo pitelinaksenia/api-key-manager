@@ -16,6 +16,7 @@ class Scope(Base):
     api_keys: Mapped[list["APIKey"]] = relationship(
         secondary="api_key_scopes",
         back_populates="scopes",
+        lazy="selectin",
     )
 
 

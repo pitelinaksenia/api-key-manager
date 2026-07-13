@@ -25,6 +25,7 @@ class APIKey(Base):
     scopes: Mapped[list["Scope"]] = relationship(
         secondary="api_key_scopes",
         back_populates="api_keys",
+        lazy="selectin",
     )
     status: Mapped[Enum] = mapped_column(
         Enum(APIKeyStatus, name="api_key_status"),
@@ -32,10 +33,14 @@ class APIKey(Base):
         default=APIKeyStatus.ACTIVE,
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
-    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    last_used_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    revoked_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_used_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    revoked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     client = relationship("Client", back_populates="api_keys")

@@ -2,7 +2,6 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.api_key import APIKey
 
@@ -18,28 +17,18 @@ class APIKeyRepository:
         return api_key
 
     async def get_by_id(self, key_id: UUID) -> APIKey | None:
-        stmt = (
-            select(APIKey)
-            .where(APIKey.id == key_id)
-            .options(selectinload(APIKey.scopes))
-        )
+        stmt = select(APIKey).where(APIKey.id == key_id).options(APIKey.scopes)
         result = await self.session.scalars(stmt)
         return result.first()
 
     async def get_by_hash(self, key_hash: str) -> APIKey | None:
-        stmt = (
-            select(APIKey)
-            .where(APIKey.key_hash == key_hash)
-            .options(selectinload(APIKey.scopes))
-        )
+        stmt = select(APIKey).where(APIKey.key_hash == key_hash).options(APIKey.scopes)
         result = await self.session.scalars(stmt)
         return result.first()
 
     async def list_by_client(self, client_id: UUID) -> list[APIKey]:
         stmt = (
-            select(APIKey)
-            .where(APIKey.client_id == client_id)
-            .options(selectinload(APIKey.scopes))
+            select(APIKey).where(APIKey.client_id == client_id).options(APIKey.scopes)
         )
         return list(await self.session.scalars(stmt))
 
