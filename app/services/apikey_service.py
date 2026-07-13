@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import HTTPException
-
 from app.core.exceptions import (
     APIKeyAlreadyRevokedError,
     APIKeyInvalidError,
@@ -16,6 +14,7 @@ from app.repositories.apikey_repository import APIKeyRepository
 from app.schemas.apikey import (
     APIKeyCreate,
     APIKeyCreateResponse,
+    APIKeyResponse,
     APIKeyRevokeResponse,
     APIKeyVerifyResponse,
 )
@@ -33,6 +32,18 @@ class APIKeyService:
         self.apikey_repo = apikey_repo
         self.scope_service = scope_service
         self.client_service = client_service
+
+    def _to_response(self, api_key: APIKey) -> APIKeyResponse:
+        return APIKeyResponse(
+            id=api_key.id,
+            name=api_key.name,
+            key_prefix=api_key.key_prefix,
+            status=api_key.status,
+            scopes=[s.code for s in api_key.scopes],
+            expires_at=api_key.expires_at,
+            created_at=api_key.created_at,
+            last_used_at=api_key.last_used_at,
+        )
 
     async def create_api_key(
         self, client_id: UUID, apikey_data: APIKeyCreate
@@ -79,9 +90,12 @@ class APIKeyService:
             raise APIKeyNotFoundError(key_id)
         return api_key
 
-    async def list_by_client(self, client_id: UUID) -> list[APIKey]:
-        await self.client_service.get(client_id)  # raises 404 if client not found
-        return await self.apikey_repo.list_by_client(client_id)
+    async def list_by_client(self, client_id: UUID) -> list[APIKeyResponse]:
+        await self.client_service.get(
+            client_id
+        )  # raises ClientNotFoundError if not found
+        api_keys = await self.apikey_repo.list_by_client(client_id)
+        return [self._to_response(key) for key in api_keys]
 
     async def verify_api_key(self, raw_key: str) -> APIKeyVerifyResponse:
         api_key_hash = hash_key(raw_key)

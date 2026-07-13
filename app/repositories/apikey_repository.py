@@ -17,19 +17,17 @@ class APIKeyRepository:
         return api_key
 
     async def get_by_id(self, key_id: UUID) -> APIKey | None:
-        stmt = select(APIKey).where(APIKey.id == key_id).options(APIKey.scopes)
+        stmt = select(APIKey).where(APIKey.id == key_id)
         result = await self.session.scalars(stmt)
         return result.first()
 
     async def get_by_hash(self, key_hash: str) -> APIKey | None:
-        stmt = select(APIKey).where(APIKey.key_hash == key_hash).options(APIKey.scopes)
+        stmt = select(APIKey).where(APIKey.key_hash == key_hash)
         result = await self.session.scalars(stmt)
         return result.first()
 
     async def list_by_client(self, client_id: UUID) -> list[APIKey]:
-        stmt = (
-            select(APIKey).where(APIKey.client_id == client_id).options(APIKey.scopes)
-        )
+        stmt = select(APIKey).where(APIKey.client_id == client_id)
         return list(await self.session.scalars(stmt))
 
     async def update(self, api_key: APIKey) -> APIKey:

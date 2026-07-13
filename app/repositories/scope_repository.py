@@ -12,11 +12,11 @@ class ScopeRepository:
         self.session = session
 
     async def get_by_id(self, scope_id: UUID) -> Scope | None:
-        stmt = select(Scope).options(Scope.api_keys).where(Scope.id == scope_id)
+        stmt = select(Scope).where(Scope.id == scope_id)
         return await self.session.scalar(stmt)
 
     async def get_all(self) -> list[Scope]:
-        stmt = select(Scope).options(Scope.api_keys)
+        stmt = select(Scope)
         return list(await self.session.scalars(stmt))
 
     async def get_by_codes(self, codes: list[str]) -> list[Scope]:
