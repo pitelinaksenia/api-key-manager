@@ -3,6 +3,12 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
+from app.core.exceptions import (
+    APIKeyAlreadyRevokedError,
+    APIKeyInvalidError,
+    APIKeyNotFoundError,
+    ClientNotActiveError,
+)
 from app.core.security import generate_api_key, hash_key
 from app.models.api_key import APIKey
 from app.models.enums import APIKeyStatus
@@ -33,7 +39,7 @@ class APIKeyService:
     ) -> APIKeyCreateResponse:
         client = await self.client_service.get(client_id)
         if not client.is_active:
-            raise HTTPException(status_code=400, detail="Client is not active")
+            raise ClientNotActiveError(client_id)
 
         scopes = await self.scope_service.get_by_codes(apikey_data.scope_codes)
 
@@ -64,13 +70,13 @@ class APIKeyService:
     async def get(self, key_id: UUID) -> APIKey:
         api_key = await self.apikey_repo.get_by_id(key_id)
         if not api_key:
-            raise HTTPException(status_code=404, detail="API key not found")
+            raise APIKeyNotFoundError(key_id)
         return api_key
 
     async def get_by_client(self, client_id: UUID, key_id: UUID) -> APIKey:
         api_key = await self.get(key_id)
         if api_key.client_id != client_id:
-            raise HTTPException(status_code=404, detail="API key not found")
+            raise APIKeyNotFoundError(key_id)
         return api_key
 
     async def list_by_client(self, client_id: UUID) -> list[APIKey]:
@@ -82,13 +88,13 @@ class APIKeyService:
         api_key = await self.apikey_repo.get_by_hash(api_key_hash)
 
         if not api_key:
-            raise HTTPException(status_code=404, detail="API key not found")
+            raise APIKeyInvalidError()
 
         if api_key.status != APIKeyStatus.ACTIVE:
-            raise HTTPException(status_code=401, detail="API key is not active")
+            raise APIKeyInvalidError()
 
         if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
-            raise HTTPException(status_code=401, detail="API key expired")
+            raise APIKeyInvalidError()
 
         api_key.last_used_at = datetime.now(timezone.utc)
         await self.apikey_repo.update(api_key)
@@ -102,7 +108,7 @@ class APIKeyService:
         api_key = await self.get(key_id)
 
         if api_key.status == APIKeyStatus.REVOKED:
-            raise HTTPException(status_code=400, detail="APIKey was already revoked")
+            raise APIKeyAlreadyRevokedError(key_id)
 
         api_key.status = APIKeyStatus.REVOKED
         api_key.revoked_at = datetime.now(timezone.utc)

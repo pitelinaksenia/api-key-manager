@@ -1,7 +1,8 @@
 from uuid import UUID
 
-from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 
+from app.core.exceptions import ScopeAlreadyExistsError, ScopeNotFoundError
 from app.models.scope import Scope
 from app.repositories.scope_repository import ScopeRepository
 from app.schemas.scope import ScopeCreate
@@ -14,17 +15,23 @@ class ScopeService:
     async def get(self, scope_id: UUID) -> Scope:
         scope = await self.scope_repo.get_by_id(scope_id)
         if not scope:
-            raise HTTPException(status_code=404, detail="Scope not found")
+            raise ScopeNotFoundError(scope_id)
         return scope
 
     async def get_by_codes(self, codes: list[str]) -> list[Scope]:
         scopes = await self.scope_repo.get_by_codes(codes)
         if len(scopes) != len(codes):
-            raise HTTPException(status_code=404, detail="One or more scopes not found")
+            found_codes = {s.code for s in scopes}
+            missing = set(codes) - found_codes
+            raise ScopeNotFoundError(missing)
         return scopes
 
     async def get_all(self) -> list[Scope]:
         return await self.scope_repo.get_all()
 
     async def create(self, scope_data: ScopeCreate) -> Scope:
-        return await self.scope_repo.create(scope_data)
+        try:
+            return await self.scope_repo.create(scope_data)
+        except IntegrityError:
+            await self.scope_repo.session.rollback()
+            raise ScopeAlreadyExistsError(scope_data.code)
