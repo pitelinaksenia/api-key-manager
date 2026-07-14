@@ -2,10 +2,13 @@ from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
 
-from app.core.exceptions import ScopeAlreadyExistsError, ScopeNotFoundError
+from app.core.exceptions.exceptions import ScopeAlreadyExistsError, ScopeNotFoundError
+from app.core.logging import get_logger
 from app.models.scope import Scope
 from app.repositories.scope_repository import ScopeRepository
 from app.schemas.scope import ScopeCreate
+
+logger = get_logger(__name__)
 
 
 class ScopeService:
@@ -31,7 +34,9 @@ class ScopeService:
 
     async def create(self, scope_data: ScopeCreate) -> Scope:
         try:
-            return await self.scope_repo.create(scope_data)
+            scope = await self.scope_repo.create(scope_data)
         except IntegrityError:
             await self.scope_repo.session.rollback()
             raise ScopeAlreadyExistsError(scope_data.code)
+        logger.info("scope_created", code=scope.code)
+        return scope

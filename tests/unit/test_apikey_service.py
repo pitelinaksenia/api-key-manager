@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.core.exceptions import (
+from app.core.exceptions.exceptions import (
     APIKeyAlreadyRevokedError,
     APIKeyInvalidError,
     APIKeyNotFoundError,

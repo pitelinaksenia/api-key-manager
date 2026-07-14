@@ -18,6 +18,10 @@ class AuthenticationError(AppError):
     pass
 
 
+class AuthorizationError(AppError):
+    pass
+
+
 class ClientNotFoundError(NotFoundError):
     def __init__(self, client_id):
         self.client_id = client_id
@@ -62,3 +66,9 @@ class APIKeyAlreadyRevokedError(InvalidStateError):
     def __init__(self, key_id):
         self.key_id = key_id
         super().__init__(f"API key {key_id} was already revoked")
+
+
+class InsufficientScopeError(AuthorizationError):
+    def __init__(self, required_scope: str):
+        self.required_scope = required_scope
+        super().__init__(f"Missing required scope: {required_scope}")

@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.core.exceptions import ScopeAlreadyExistsError, ScopeNotFoundError
+from app.core.exceptions.exceptions import ScopeAlreadyExistsError, ScopeNotFoundError
 from app.schemas.scope import ScopeCreate
 from app.services.scope_service import ScopeService
 

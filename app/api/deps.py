@@ -1,6 +1,7 @@
-from fastapi import Depends
+from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions.exceptions import APIKeyInvalidError, InsufficientScopeError
 from app.database import get_db
 from app.repositories.apikey_repository import APIKeyRepository
 from app.repositories.client_repository import ClientRepository
@@ -46,3 +47,19 @@ def get_apikey_service(
     client_service: ClientService = Depends(get_client_service),
 ) -> APIKeyService:
     return APIKeyService(apikey_repo, scope_service, client_service)
+
+
+async def get_api_key(
+    x_api_key: str = Header(..., alias="X-API-Key"),
+    apikey_service: APIKeyService = Depends(get_apikey_service),
+):
+    return await apikey_service.verify_api_key(x_api_key)
+
+
+def require_scope(scope: str):
+    async def _check(api_key=Depends(get_api_key)):
+        if scope not in api_key.scopes:
+            raise InsufficientScopeError(scope)
+        return api_key
+
+    return _check

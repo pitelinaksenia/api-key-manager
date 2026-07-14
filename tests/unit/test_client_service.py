@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.core.exceptions import ClientAlreadyExistsError, ClientNotFoundError
+from app.core.exceptions.exceptions import ClientAlreadyExistsError, ClientNotFoundError
 from app.schemas.client import ClientCreate, ClientUpdate
 from app.services.client_service import ClientService
 

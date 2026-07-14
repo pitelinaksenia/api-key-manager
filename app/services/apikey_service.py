@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from app.core.exceptions import (
+from app.core.exceptions.exceptions import (
     APIKeyAlreadyRevokedError,
     APIKeyInvalidError,
     APIKeyNotFoundError,
     ClientNotActiveError,
 )
+from app.core.logging import get_logger
 from app.core.security import generate_api_key, hash_key
 from app.models.api_key import APIKey
 from app.models.enums import APIKeyStatus
@@ -20,6 +21,8 @@ from app.schemas.apikey import (
 )
 from app.services.client_service import ClientService
 from app.services.scope_service import ScopeService
+
+logger = get_logger(__name__)
 
 
 class APIKeyService:
@@ -65,6 +68,14 @@ class APIKeyService:
         )
 
         result = await self.apikey_repo.create(api_key)
+
+        logger.info(
+            "api_key_created",
+            client_id=str(client_id),
+            key_prefix=result.key_prefix,
+            scopes=apikey_data.scope_codes,
+            expires_at=str(result.expires_at) if result.expires_at else None,
+        )
 
         return APIKeyCreateResponse(
             id=result.id,
@@ -113,6 +124,7 @@ class APIKeyService:
         api_key.last_used_at = datetime.now(timezone.utc)
         await self.apikey_repo.update(api_key)
 
+        logger.info("api_key_verified", key_prefix=api_key.key_prefix)
         return APIKeyVerifyResponse(
             client_id=api_key.client_id,
             scopes=[s.code for s in api_key.scopes],
@@ -127,6 +139,10 @@ class APIKeyService:
         api_key.status = APIKeyStatus.REVOKED
         api_key.revoked_at = datetime.now(timezone.utc)
         await self.apikey_repo.update(api_key)
+
+        logger.info(
+            "api_key_revoked", key_id=str(key_id), key_prefix=api_key.key_prefix
+        )
         return APIKeyRevokeResponse(
             id=api_key.id,
             status=api_key.status,
