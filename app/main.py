@@ -18,6 +18,9 @@ app.include_router(demo.router)
 register_exception_handlers(app)
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+@app.get("/")
+async def root():
+    return {
+        "service": "API Key Manager",
+        "docs": "https://api-key-manager.piksi.dev/docs",
+    }
