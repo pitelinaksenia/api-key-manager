@@ -30,8 +30,8 @@ class ClientService:
             raise ClientNotFoundError(client_id)
         return client
 
-    async def get_all(self) -> list[Client]:
-        return await self.client_repo.get_all()
+    async def get_all(self, limit, offset) -> list[Client]:
+        return await self.client_repo.get_all(limit=limit, offset=offset)
 
     async def update(self, client_id: UUID, client_data: ClientUpdate) -> Client:
         client = await self.get(client_id)

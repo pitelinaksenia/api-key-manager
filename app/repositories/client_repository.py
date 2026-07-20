@@ -18,8 +18,8 @@ class ClientRepository:
         await self.session.refresh(client)
         return client
 
-    async def get_all(self) -> list[Client]:
-        stmt = select(Client)
+    async def get_all(self, limit: int, offset: int) -> list[Client]:
+        stmt = select(Client).offset(offset).limit(limit)
         result = await self.session.scalars(stmt)
         return list(result)
 

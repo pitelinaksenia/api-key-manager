@@ -22,9 +22,11 @@ async def create_client(
 
 @router.get("/", response_model=list[ClientResponse])
 async def get_clients(
+    limit: int = 20,
+    offset: int = 0,
     client_service: ClientService = Depends(get_client_service),
 ) -> list[ClientResponse]:
-    return await client_service.get_all()
+    return await client_service.get_all(limit=limit, offset=offset)
 
 
 @router.get("/{client_id}", response_model=ClientResponse)
